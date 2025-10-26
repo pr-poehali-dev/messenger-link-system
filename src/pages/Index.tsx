@@ -29,10 +29,14 @@ interface Message {
 
 export default function Index() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [isRegistering, setIsRegistering] = useState(false);
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [activeTab, setActiveTab] = useState('messages');
+  const [isLoading, setIsLoading] = useState(false);
+  
+  const API_URL = 'https://functions.poehali.dev/1cd16fac-aadb-4332-bbc1-1b4479dcf7b5';
 
   const mockMessages: Message[] = [
     { id: '1', platform: 'telegram', sender: 'Алекс Петров', text: 'Привет! Как дела?', time: '14:32', unread: true },
@@ -42,29 +46,59 @@ export default function Index() {
     { id: '5', platform: 'telegram', sender: 'Игровой клуб', text: '🎮 Турнир начинается!', time: 'Вчера', unread: false },
   ];
 
-  const handleLogin = () => {
-    if (username === 'skzry' && password === '22') {
-      setCurrentUser({
-        username: 'skzry',
-        isAdmin: true,
-        isVerified: true,
-        trialDaysLeft: 0,
-        isPro: true,
-        connectedPlatforms: ['telegram', 'vk', 'max', 'whatsapp']
+  const handleAuth = async () => {
+    if (!username || !password) {
+      toast({ title: '⚠️ Ошибка', description: 'Заполните все поля', variant: 'destructive' });
+      return;
+    }
+    
+    setIsLoading(true);
+    
+    try {
+      const response = await fetch(API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: isRegistering ? 'register' : 'login',
+          username,
+          password
+        })
       });
+      
+      const data = await response.json();
+      
+      if (!response.ok) {
+        toast({ 
+          title: '❌ Ошибка', 
+          description: data.error || 'Что-то пошло не так', 
+          variant: 'destructive' 
+        });
+        return;
+      }
+      
+      setCurrentUser(data.user);
       setIsLoggedIn(true);
-      toast({ title: '🚀 Добро пожаловать, Админ!', description: 'Вход выполнен успешно' });
-    } else if (username && password) {
-      setCurrentUser({
-        username: username,
-        isAdmin: false,
-        isVerified: false,
-        trialDaysLeft: 3,
-        isPro: false,
-        connectedPlatforms: ['telegram']
+      localStorage.setItem('sessionToken', data.sessionToken);
+      
+      if (isRegistering) {
+        toast({ 
+          title: '🎉 Регистрация успешна!', 
+          description: `Добро пожаловать, ${data.user.username}! У вас ${data.user.trialDaysLeft} дня триала` 
+        });
+      } else {
+        toast({ 
+          title: data.user.isAdmin ? '🚀 Добро пожаловать, Админ!' : '✨ С возвращением!', 
+          description: 'Вход выполнен успешно' 
+        });
+      }
+    } catch (error) {
+      toast({ 
+        title: '⚠️ Ошибка соединения', 
+        description: 'Не удалось подключиться к серверу', 
+        variant: 'destructive' 
       });
-      setIsLoggedIn(true);
-      toast({ title: '✨ Добро пожаловать!', description: `У вас ${3} дня бесплатного доступа` });
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -102,7 +136,7 @@ export default function Index() {
               Mess_skz
             </CardTitle>
             <CardDescription className="text-lg">
-              Все твои сообщения в одном месте 🎮
+              {isRegistering ? 'Создай аккаунт за секунду! ⚡' : 'Все твои сообщения в одном месте 🎮'}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -112,25 +146,44 @@ export default function Index() {
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 className="bg-muted/50 border-primary/30 focus:border-primary"
+                disabled={isLoading}
               />
               <Input
                 type="password"
                 placeholder="Пароль"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                onKeyPress={(e) => e.key === 'Enter' && handleLogin()}
+                onKeyPress={(e) => e.key === 'Enter' && handleAuth()}
                 className="bg-muted/50 border-primary/30 focus:border-primary"
+                disabled={isLoading}
               />
             </div>
             <Button 
-              onClick={handleLogin} 
+              onClick={handleAuth} 
               className="w-full bg-gradient-to-r from-primary via-secondary to-accent hover:opacity-90 transition-all text-lg font-bold h-12"
+              disabled={isLoading}
             >
-              Войти 🚀
+              {isLoading ? (
+                <Icon name="Loader2" size={20} className="animate-spin" />
+              ) : (
+                isRegistering ? 'Зарегистрироваться 🎮' : 'Войти 🚀'
+              )}
             </Button>
-            <p className="text-xs text-center text-muted-foreground">
-              Первые 3 дня бесплатно! 🎁
-            </p>
+            <div className="text-center space-y-2">
+              <Button
+                variant="link"
+                onClick={() => setIsRegistering(!isRegistering)}
+                className="text-primary hover:text-secondary"
+                disabled={isLoading}
+              >
+                {isRegistering ? 'Уже есть аккаунт? Войти' : 'Нет аккаунта? Создать'}
+              </Button>
+              {isRegistering && (
+                <p className="text-xs text-muted-foreground">
+                  Первые 3 дня бесплатно! 🎁
+                </p>
+              )}
+            </div>
           </CardContent>
         </Card>
       </div>

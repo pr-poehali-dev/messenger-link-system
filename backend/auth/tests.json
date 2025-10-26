@@ -1,0 +1,40 @@
+{
+  "tests": [
+    {
+      "name": "Register returns error if user exists",
+      "method": "POST",
+      "path": "/",
+      "body": {
+        "action": "register",
+        "username": "testuser2025x",
+        "password": "testpass123"
+      },
+      "expectedStatus": 409,
+      "expectedBody": {
+        "error": "string"
+      },
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "Login returns error for nonexistent user",
+      "method": "POST",
+      "path": "/",
+      "body": {
+        "action": "login",
+        "username": "nonexistent123",
+        "password": "wrongpass"
+      },
+      "expectedStatus": 401,
+      "expectedBody": {
+        "error": "string"
+      },
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "Handle OPTIONS preflight",
+      "method": "OPTIONS",
+      "path": "/",
+      "expectedStatus": 200
+    }
+  ]
+}
