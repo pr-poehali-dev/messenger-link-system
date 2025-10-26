@@ -10,6 +10,7 @@ import Icon from '@/components/ui/icon';
 import { toast } from '@/hooks/use-toast';
 
 interface User {
+  id: number;
   username: string;
   isAdmin: boolean;
   isVerified: boolean;
@@ -37,6 +38,7 @@ export default function Index() {
   const [isLoading, setIsLoading] = useState(false);
   
   const API_URL = 'https://functions.poehali.dev/1cd16fac-aadb-4332-bbc1-1b4479dcf7b5';
+  const CONNECT_API_URL = 'https://functions.poehali.dev/6d530b43-971e-4b27-bfcc-835f2e814ee4';
 
   const mockMessages: Message[] = [
     { id: '1', platform: 'telegram', sender: 'Алекс Петров', text: 'Привет! Как дела?', time: '14:32', unread: true },
@@ -120,6 +122,59 @@ export default function Index() {
       whatsapp: 'bg-green-500'
     };
     return colors[platform] || 'bg-gray-500';
+  };
+
+  const handleConnectPlatform = async (platform: string) => {
+    if (!currentUser) return;
+
+    const isConnected = currentUser.connectedPlatforms?.includes(platform);
+    
+    if (isConnected) {
+      if (!confirm(`Отключить ${platform}?`)) return;
+    }
+
+    setIsLoading(true);
+    
+    try {
+      const response = await fetch(CONNECT_API_URL, {
+        method: isConnected ? 'DELETE' : 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: currentUser.id,
+          platform,
+          platformUserId: `${platform}_user_${currentUser.id}`
+        })
+      });
+      
+      const data = await response.json();
+      
+      if (!response.ok) {
+        toast({ 
+          title: '❌ Ошибка', 
+          description: data.error || 'Не удалось выполнить действие', 
+          variant: 'destructive' 
+        });
+        return;
+      }
+      
+      setCurrentUser({
+        ...currentUser,
+        connectedPlatforms: data.connectedPlatforms
+      });
+      
+      toast({ 
+        title: isConnected ? '✓ Отключено' : '✓ Подключено', 
+        description: `Платформа ${platform} ${isConnected ? 'отключена' : 'подключена'}`
+      });
+    } catch (error) {
+      toast({ 
+        title: '⚠️ Ошибка соединения', 
+        description: 'Не удалось подключиться к серверу', 
+        variant: 'destructive' 
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   if (!isLoggedIn) {
@@ -335,11 +390,12 @@ export default function Index() {
                       return (
                         <Card
                           key={platform}
-                          className={`transition-all ${
+                          className={`transition-all cursor-pointer ${
                             isConnected
-                              ? 'border-primary/50 bg-primary/5'
-                              : 'border-dashed opacity-50 hover:opacity-100'
+                              ? 'border-primary/50 bg-primary/5 hover:border-primary'
+                              : 'border-dashed opacity-50 hover:opacity-100 hover:border-primary/30'
                           }`}
+                          onClick={() => handleConnectPlatform(platform)}
                         >
                           <CardContent className="p-4 flex items-center gap-3">
                             <div className={`h-10 w-10 rounded-full ${getPlatformColor(platform)} flex items-center justify-center`}>
@@ -348,9 +404,22 @@ export default function Index() {
                             <div className="flex-1">
                               <p className="font-medium capitalize">{platform}</p>
                               <p className="text-xs text-muted-foreground">
-                                {isConnected ? '✓ Подключено' : 'Не подключено'}
+                                {isConnected ? '✓ Подключено' : 'Нажми, чтобы подключить'}
                               </p>
                             </div>
+                            {isConnected && (
+                              <Button 
+                                variant="ghost" 
+                                size="icon" 
+                                className="h-8 w-8 hover:bg-destructive/20"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleConnectPlatform(platform);
+                                }}
+                              >
+                                <Icon name="X" size={16} className="text-muted-foreground hover:text-destructive" />
+                              </Button>
+                            )}
                           </CardContent>
                         </Card>
                       );

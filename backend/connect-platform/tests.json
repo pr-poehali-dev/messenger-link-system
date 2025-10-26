@@ -1,0 +1,39 @@
+{
+  "tests": [
+    {
+      "name": "Connect platform success",
+      "method": "POST",
+      "path": "/",
+      "body": {
+        "userId": 1,
+        "platform": "telegram",
+        "platformUserId": "telegram_user_123"
+      },
+      "expectedStatus": 200,
+      "expectedBody": {
+        "success": true,
+        "message": "string"
+      },
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "Connect platform without userId",
+      "method": "POST",
+      "path": "/",
+      "body": {
+        "platform": "telegram"
+      },
+      "expectedStatus": 400,
+      "expectedBody": {
+        "error": "string"
+      },
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "Handle OPTIONS preflight",
+      "method": "OPTIONS",
+      "path": "/",
+      "expectedStatus": 200
+    }
+  ]
+}
