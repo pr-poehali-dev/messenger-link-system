@@ -95,7 +95,8 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                             'isAdmin': user['is_admin'],
                             'isVerified': user['is_verified'],
                             'isPro': user['is_pro'],
-                            'trialDaysLeft': trial_days_left
+                            'trialDaysLeft': trial_days_left,
+                            'connectedPlatforms': []
                         },
                         'sessionToken': session_token
                     })

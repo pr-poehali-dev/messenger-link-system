@@ -15,7 +15,7 @@ interface User {
   isVerified: boolean;
   trialDaysLeft: number;
   isPro: boolean;
-  connectedPlatforms: string[];
+  connectedPlatforms?: string[];
 }
 
 interface Message {
@@ -331,7 +331,7 @@ export default function Index() {
                   </h4>
                   <div className="grid grid-cols-2 gap-3">
                     {['telegram', 'vk', 'max', 'whatsapp'].map((platform) => {
-                      const isConnected = currentUser?.connectedPlatforms.includes(platform);
+                      const isConnected = currentUser?.connectedPlatforms?.includes(platform) || false;
                       return (
                         <Card
                           key={platform}
