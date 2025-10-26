@@ -1,0 +1,13 @@
+{
+  "tests": [
+    {
+      "name": "Hash password 22",
+      "method": "POST",
+      "path": "/",
+      "body": {
+        "password": "22"
+      },
+      "expectedStatus": 200
+    }
+  ]
+}

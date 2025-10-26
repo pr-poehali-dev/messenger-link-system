@@ -105,14 +105,25 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             elif action == 'login':
                 password_hash = hash_password(password)
                 
+                print(f"Login attempt: username={username}, password_hash={password_hash[:20]}...")
+                
                 cur.execute(
-                    """SELECT id, username, is_admin, is_verified, is_pro, trial_end_date 
-                       FROM users WHERE username = %s AND password_hash = %s""",
-                    (username, password_hash)
+                    """SELECT id, username, is_admin, is_verified, is_pro, trial_end_date, password_hash 
+                       FROM users WHERE username = %s""",
+                    (username,)
                 )
                 user = cur.fetchone()
                 
                 if not user:
+                    print(f"User not found: {username}")
+                    return {
+                        'statusCode': 401,
+                        'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+                        'body': json.dumps({'error': 'Invalid username or password'})
+                    }
+                
+                if user['password_hash'] != password_hash:
+                    print(f"Password mismatch: expected={user['password_hash'][:20]}..., got={password_hash[:20]}...")
                     return {
                         'statusCode': 401,
                         'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
